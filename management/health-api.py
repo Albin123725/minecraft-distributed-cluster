@@ -28,3 +28,23 @@ def receive_health_report():
         return jsonify({'status': 'received'})
     
     return jsonify({'error': 'Invalid data'}), 400
+
+@app.route('/api/health-status')
+def get_health_status():
+    current_time = time.time()
+    expired_nodes = [
+        node_id for node_id, report in health_reports.items()
+        if current_time - report['last_update'] > 300
+    ]
+    
+    for node_id in expired_nodes:
+        del health_reports[node_id]
+    
+    return jsonify({
+        'total_servers': len(health_reports),
+        'healthy_servers': len([r for r in health_reports.values() if r['status'] == 'healthy']),
+        'reports': health_reports
+    })
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5002)
