@@ -1,92 +1,65 @@
 #!/bin/bash
 
-# AUTO-CONFIGURATION
+# DISTRIBUTED WORKLOAD - EACH SERVER DOES ONE SMALL TASK
 SERVICE_NAME="${RENDER_SERVICE_NAME:-mc-game-1}"
 NODE_ID="${SERVICE_NAME//mc-/}"
 SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
 
 case $SERVER_NUMBER in
-    1) SERVER_PORT="25566"; WORLD_REGION="spawn" ;;
-    2) SERVER_PORT="25567"; WORLD_REGION="nether" ;;
-    3) SERVER_PORT="25568"; WORLD_REGION="end" ;;
-    4) SERVER_PORT="25569"; WORLD_REGION="wilderness-1" ;;
-    5) SERVER_PORT="25570"; WORLD_REGION="wilderness-2" ;;
-    6) SERVER_PORT="25571"; WORLD_REGION="wilderness-3" ;;
-    7) SERVER_PORT="25572"; WORLD_REGION="wilderness-4" ;;
-    8) SERVER_PORT="25573"; WORLD_REGION="ocean-1" ;;
-    9) SERVER_PORT="25574"; WORLD_REGION="ocean-2" ;;
-    10) SERVER_PORT="25575"; WORLD_REGION="mountain-1" ;;
-    11) SERVER_PORT="25576"; WORLD_REGION="mountain-2" ;;
-    12) SERVER_PORT="25577"; WORLD_REGION="desert-1" ;;
-    13) SERVER_PORT="25578"; WORLD_REGION="desert-2" ;;
-    14) SERVER_PORT="25579"; WORLD_REGION="forest-1" ;;
-    15) SERVER_PORT="25580"; WORLD_REGION="forest-2" ;;
-    16) SERVER_PORT="25581"; WORLD_REGION="village-1" ;;
-    *) SERVER_PORT="25566"; WORLD_REGION="spawn" ;;
+    1) JOB="download"; MEMORY="300M" ;;
+    2) JOB="patch"; MEMORY="280M" ;;
+    3) JOB="plugins"; MEMORY="260M" ;;
+    4) JOB="world"; MEMORY="280M" ;;
+    *) JOB="light"; MEMORY="220M" ;; # Servers 5-16
 esac
 
 HEALTH_PORT="10000"
+SERVER_PORT=$((25565 + $SERVER_NUMBER))
 
-echo "🎮 Starting PaperMC Server: $NODE_ID"
-echo "🌍 Region: $WORLD_REGION"
-echo "💾 MEMORY FIX: Only 2 servers generate worlds at a time"
+echo "🎯 SERVER $NODE_ID - JOB: $JOB"
+echo "💾 MEMORY: $MEMORY heap"
+echo "🔧 DISTRIBUTED: Heavy work split across 4 servers"
 
-# Start HTTP server IMMEDIATELY
-echo "✅ Server $NODE_ID - WAITING" > /app/index.html
+# Health server
 python3 -m http.server $HEALTH_PORT --directory /app > /dev/null 2>&1 &
-HEALTH_PID=$!
 
-# 🎯 EXTREME WORK SPLITTING - Only 2 servers at a time
-BATCH_NUMBER=$(( ($SERVER_NUMBER - 1) / 2 ))  # Batches of 2 servers
-WAIT_TIME=$(( $BATCH_NUMBER * 1200 ))  # 20 minutes between batches
+# Each server waits different times based on job
+case $JOB in
+    "download") sleep 0; ;;
+    "patch") sleep 120; ;;     # Wait 2 minutes
+    "plugins") sleep 240; ;;   # Wait 4 minutes  
+    "world") sleep 360; ;;     # Wait 6 minutes
+    "light") sleep 480; ;;     # Wait 8 minutes
+esac
 
-echo "⏰ WORK SPLITTING: I'm in batch $((BATCH_NUMBER + 1))"
-echo "🕒 Waiting ${WAIT_TIME}s for previous batches..."
-sleep $WAIT_TIME
-
-echo "🎯 MY TURN NOW: Starting world generation..."
-
-# OPTIMIZED memory settings
+# Server configuration
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
-view-distance=4
-simulation-distance=3
-max-players=20
+view-distance=3
+simulation-distance=2
+max-players=15
 online-mode=false
-motd=MC Cluster - $WORLD_REGION
+motd=Job-$JOB - Server$SERVER_NUMBER
 level-name=world
-level-type=default
-max-world-size=3000
+level-type=flat
+max-world-size=1000
 spawn-protection=0
-network-compression-threshold=64
+network-compression-threshold=32
 allow-nether=true
 allow-end=true
-level-name-nether=world_nether
-level-name-end=world_the_end
 enable-rcon=true
 rcon.port=$((SERVER_PORT + 10000))
-rcon.password=${NODE_ID}-$(openssl rand -hex 8)
-allow-flight=true
-enable-command-block=false
+rcon.password=${NODE_ID}-pass
 EOF
 
-echo "✅ Server ready for world generation (400MB estimated)"
+# Download PaperMC if this is the download server
+if [ "$JOB" = "download" ]; then
+    echo "📥 Downloading PaperMC..."
+    wget -O paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
+fi
 
-# Cleanup function
-cleanup() {
-    kill $HEALTH_PID 2>/dev/null
-    exit 0
-}
-
-trap cleanup SIGTERM SIGINT
-
-# SAFE memory allocation (guaranteed under 512MB)
-echo "🚀 Starting PaperMC with 300MB heap (GUARANTEED WORKING)..."
-java -Xmx300M -Xms200M \
+echo "🚀 Starting with $MEMORY heap..."
+java -Xmx$MEMORY -Xms150M \
      -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=150 \
-     -XX:+UnlockExperimentalVMOptions \
-     -XX:+DisableExplicitGC \
+     -XX:MaxGCPauseMillis=200 \
      -jar paper.jar nogui
-
-cleanup
