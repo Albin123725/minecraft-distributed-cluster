@@ -3,14 +3,23 @@
 echo "🎮 Starting PaperMC Server: $NODE_ID"
 echo "🌍 Region: $WORLD_REGION"
 echo "💾 RAM: 375MB (Part of 6GB Cluster)"
-echo "👥 Capacity: 20 players per server"
-echo "🔧 Total Cluster: 16 servers × 375MB = 6GB RAM"
+echo "🔧 HTTP Health Port: 8080 + server number"
+
+# Calculate HTTP health port (8081 to 8096)
+SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
+HTTP_PORT=$((8080 + $SERVER_NUMBER))
+echo "🌐 HTTP Health Port: $HTTP_PORT"
 
 # Wait based on server number to stagger startup
-SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
-WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 60 ))  # 60 seconds between servers
+WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 60 ))
 echo "⏰ Staggered startup: waiting ${WAIT_TIME}s..."
 sleep $WAIT_TIME
+
+# Start HTTP health server FIRST (before Minecraft)
+echo "Starting HTTP health server on port $HTTP_PORT"
+echo "✅ Minecraft Server $NODE_ID - Region: $WORLD_REGION - Status: ONLINE" > /app/health.html
+python3 -m http.server $HTTP_PORT --directory /app > /dev/null 2>&1 &
+HEALTH_PID=$!
 
 # Create optimized server.properties
 cat > /app/server.properties << EOF
@@ -36,11 +45,23 @@ echo "enable-rcon=true" >> /app/server.properties
 
 echo "✅ Server configured for 375MB operation"
 
-# Start with 300MB heap (375MB total with system)
+# Function to cleanup processes
+cleanup() {
+    echo "🛑 Shutting down Minecraft server..."
+    kill $HEALTH_PID 2>/dev/null
+    exit 0
+}
+
+trap cleanup SIGTERM SIGINT
+
+# Start Minecraft server
 echo "🚀 Starting PaperMC Server..."
-exec java -Xmx300M -Xms200M \
+java -Xmx300M -Xms200M \
      -XX:+UseG1GC \
      -XX:MaxGCPauseMillis=100 \
      -XX:+UnlockExperimentalVMOptions \
      -XX:+ParallelRefProcEnabled \
      -jar paper.jar nogui
+
+# Cleanup after Minecraft exits
+cleanup
