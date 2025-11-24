@@ -16,20 +16,10 @@ WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 30 ))
 echo "⏰ Staggered startup: waiting ${WAIT_TIME}s..."
 sleep $WAIT_TIME
 
-# Download plugins (minimal set for memory efficiency)
-echo "📥 Downloading default plugins for $NODE_ID..."
+# Skip plugin downloads initially (fixes memory and corruption issues)
+echo "📥 Skipping plugin downloads for initial stability..."
 mkdir -p /app/plugins
-
-# Use minimal plugin set
-MINIMAL_PLUGINS=(
-    "https://cdn.modrinth.com/data/U6oOTGTt/versions/gzEC9sT6/auto-reload-1.0.0.jar"
-)
-
-for plugin_url in "${MINIMAL_PLUGINS[@]}"; do
-    plugin_name=$(basename $plugin_url)
-    echo "📥 Downloading $plugin_name..."
-    wget --timeout=30 -q -O "/app/plugins/$plugin_name" "$plugin_url" && echo "✅ Downloaded $plugin_name" || echo "❌ Failed to download $plugin_name"
-done
+rm -f /app/plugins/*.jar  # Remove any corrupted plugins
 
 # Optimize server with reduced memory
 echo "⚡ Server Optimizer for $NODE_ID"
@@ -47,7 +37,7 @@ online-mode=false
 white-list=false
 motd=PaperMC Distributed Cluster - $WORLD_REGION
 level-name=world
-level-type=minecraft\:normal
+level-type=minecraft:normal
 generator-settings=
 hardcore=false
 enable-command-block=true
@@ -66,11 +56,8 @@ echo "enable-rcon=true" >> /app/server.properties
 
 echo "✅ Server configured!"
 
-# Start health monitor in background
-./health-monitor.sh &
-
-# Start server with reduced memory
-echo "🚀 Starting PaperMC server with optimized memory..."
+# Start server with reduced memory (NO PLUGINS = MORE MEMORY FOR MINECRAFT)
+echo "🚀 Starting PaperMC server (vanilla mode - no plugins)..."
 exec java -Xmx350M -Xms256M \
      -XX:+UseG1GC \
      -XX:MaxGCPauseMillis=100 \
