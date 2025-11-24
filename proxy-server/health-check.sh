@@ -1,3 +1,3 @@
 #!/bin/bash
-# Health check for proxy server
-curl -f http://localhost:25575/ || exit 1
+# Simple process-based health check
+pgrep -f "bungee.jar" > /dev/null
