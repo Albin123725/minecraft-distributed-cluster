@@ -1,12 +1,18 @@
-FROM eclipse-temurin:21-jre
+FROM openjdk:21-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y wget curl python3 python3-pip && apt-get clean
+RUN apt-get update && apt-get install -y wget curl python3 python3-venv python3-pip && apt-get clean
+
+# Create and activate virtual environment
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
 # Copy requirements first for better caching
 COPY requirements-gdrive.txt .
-RUN pip3 install -r requirements-gdrive.txt
+
+# Install Python packages in virtual environment
+RUN pip install --upgrade pip && pip install -r requirements-gdrive.txt
 
 # Download PaperMC 1.21.10
 RUN wget -O paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
