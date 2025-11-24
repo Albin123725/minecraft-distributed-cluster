@@ -1,0 +1,39 @@
+# Spigot Configuration
+config-version: 12
+settings:
+  save-user-cache-on-stop-only: false
+  moved-wrongly-threshold: 0.0625
+  moved-too-quickly-multiplier: 10.0
+  timeout-time: 60
+  restart-on-crash: true
+  restart-script: ./start.sh
+  player-shuffle: 0
+  bungeecord: true
+  sample-count: 12
+  player-save: 15
+  user-cache-size: 1000
+  int-cache-limit: 1024
+
+messages:
+  whitelist: You are not whitelisted on this server!
+  unknown-command: Unknown command. Type "/help" for help.
+  server-full: The server is full!
+  outdated-client: Outdated client! Please use {0}
+  outdated-server: Outdated server! I'm still on {0}
+
+commands:
+  silent-commandblock-console: false
+  log: true
+  spam-exclusions:
+  - /skill
+  tab-complete: 0
+  send-namespaced: true
+
+advancements:
+  disable-saving: false
+  disabled:
+  - minecraft:story/disabled
+
+stats:
+  disable-saving: false
+  forced-stats: {}
