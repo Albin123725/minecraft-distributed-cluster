@@ -1,3 +1,3 @@
 #!/bin/bash
-# Health check for game server - check if PaperMC process is running
+# Simple process-based health check for game server
 pgrep -f "paper.jar" > /dev/null
