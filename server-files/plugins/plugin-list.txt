@@ -1,0 +1,9 @@
+# Essential Plugins for Minecraft Cluster
+# These will be downloaded automatically
+
+https://github.com/monun/auto-reload/releases/latest/download/auto-reload-1.0.0.jar
+https://github.com/EngineHub/WorldEdit/releases/latest/download/worldedit-bukkit-7.2.15.jar
+
+# Optional Plugins (uncomment to enable)
+# https://github.com/PluginsCDTribe/Dynmap/releases/latest/download/Dynmap-3.6.2-spigot.jar
+# https://github.com/dmulloy2/ProtocolLib/releases/latest/download/ProtocolLib.jar
