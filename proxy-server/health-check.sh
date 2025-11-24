@@ -1,4 +1,3 @@
 #!/bin/bash
-# Simple health check - just verify BungeeCord process is running
-pgrep -f "bungee.jar" > /dev/null
-exit $?
+# Health check for proxy server
+curl -f http://localhost:25575/ || exit 1
