@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y wget curl python3 python3-venv && apt-get clean
+RUN apt-get update && apt-get install -y wget curl python3 python3-venv openssl && apt-get clean
 
 # Create and activate virtual environment
 RUN python3 -m venv /app/venv
@@ -26,6 +26,7 @@ COPY gdrive-download.py .
 COPY server-optimizer.sh .
 COPY health-monitor.sh .
 COPY backup-script.sh .
+COPY health-check.sh .
 
 # Copy Python files
 COPY gdrive-manager.py .
