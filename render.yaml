@@ -1,5 +1,5 @@
 
-### **2. render.yaml**
+### **3. render.yaml**
 ```yaml
 services:
   # ========================
@@ -70,7 +70,83 @@ services:
     autoDeploy: true
     numInstances: 1
 
-  # ... (mc-game-2 to mc-game-15 with different ports/regions) ...
+  - type: web
+    name: mc-game-2
+    env: docker
+    plan: free
+    docker:
+      dockerfile: game-server/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "game"
+      - key: NODE_ID
+        value: "game-2"
+      - key: SERVER_PORT
+        value: "25567"
+      - key: WORLD_REGION
+        value: "nether"
+      - key: MANAGEMENT_URL
+        value: "mc-management.onrender.com"
+      - key: PROXY_URL
+        value: "mc-proxy-main.onrender.com"
+      - key: GDRIVE_FOLDER_ID
+        valueFrom:
+          name: gdrive-folder-id
+          type: secret
+      - key: GDRIVE_CREDENTIALS_JSON
+        valueFrom:
+          name: gdrive-credentials
+          type: secret
+      - key: GDRIVE_TOKEN_PICKLE
+        valueFrom:
+          name: gdrive-token
+          type: secret
+      - key: SYNC_INTERVAL
+        value: "300"
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    numInstances: 1
+
+  - type: web
+    name: mc-game-3
+    env: docker
+    plan: free
+    docker:
+      dockerfile: game-server/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "game"
+      - key: NODE_ID
+        value: "game-3"
+      - key: SERVER_PORT
+        value: "25568"
+      - key: WORLD_REGION
+        value: "end"
+      - key: MANAGEMENT_URL
+        value: "mc-management.onrender.com"
+      - key: PROXY_URL
+        value: "mc-proxy-main.onrender.com"
+      - key: GDRIVE_FOLDER_ID
+        valueFrom:
+          name: gdrive-folder-id
+          type: secret
+      - key: GDRIVE_CREDENTIALS_JSON
+        valueFrom:
+          name: gdrive-credentials
+          type: secret
+      - key: GDRIVE_TOKEN_PICKLE
+        valueFrom:
+          name: gdrive-token
+          type: secret
+      - key: SYNC_INTERVAL
+        value: "300"
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    numInstances: 1
+
+  # ... (mc-game-4 to mc-game-15 with different ports/regions) ...
 
   - type: web
     name: mc-game-16
@@ -154,8 +230,8 @@ services:
 # ========================
 secrets:
   - name: gdrive-folder-id
-    value: "your_google_drive_folder_id"
+    value: "your_google_drive_folder_id_here"
   - name: gdrive-credentials
-    value: "{\"installed\":{\"client_id\":\"...\",\"project_id\":\"...\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_secret\":\"...\",\"redirect_uris\":[\"http://localhost\"]}}"
+    value: "{\"installed\":{\"client_id\":\"740511594522-ofu7utfiedtpemu0cg9ghommdqoicbjf.apps.googleusercontent.com\",\"project_id\":\"termux-479006\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_secret\":\"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\",\"redirect_uris\":[\"http://localhost\"]}}"
   - name: gdrive-token
-    value: "base64_encoded_token_pickle"
+    value: "base64_encoded_token_here"
