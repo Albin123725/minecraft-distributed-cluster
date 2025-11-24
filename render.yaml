@@ -1,0 +1,161 @@
+
+### **2. render.yaml**
+```yaml
+services:
+  # ========================
+  # PROXY SERVER
+  # ========================
+  - type: web
+    name: mc-proxy-main
+    env: docker
+    plan: free
+    docker:
+      dockerfile: proxy-server/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "proxy"
+      - key: NODE_ID
+        value: "proxy-main"
+      - key: PROXY_PORT
+        value: "25565"
+      - key: MANAGEMENT_URL
+        value: "mc-management.onrender.com"
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    healthCheckPath: /health
+    numInstances: 1
+    ports:
+      - port: 25565
+        protocol: TCP
+
+  # ========================
+  # GAME SERVERS 1-16
+  # ========================
+  - type: web
+    name: mc-game-1
+    env: docker
+    plan: free
+    docker:
+      dockerfile: game-server/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "game"
+      - key: NODE_ID
+        value: "game-1"
+      - key: SERVER_PORT
+        value: "25566"
+      - key: WORLD_REGION
+        value: "spawn"
+      - key: MANAGEMENT_URL
+        value: "mc-management.onrender.com"
+      - key: PROXY_URL
+        value: "mc-proxy-main.onrender.com"
+      - key: GDRIVE_FOLDER_ID
+        valueFrom:
+          name: gdrive-folder-id
+          type: secret
+      - key: GDRIVE_CREDENTIALS_JSON
+        valueFrom:
+          name: gdrive-credentials
+          type: secret
+      - key: GDRIVE_TOKEN_PICKLE
+        valueFrom:
+          name: gdrive-token
+          type: secret
+      - key: SYNC_INTERVAL
+        value: "300"
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    numInstances: 1
+
+  # ... (mc-game-2 to mc-game-15 with different ports/regions) ...
+
+  - type: web
+    name: mc-game-16
+    env: docker
+    plan: free
+    docker:
+      dockerfile: game-server/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "game"
+      - key: NODE_ID
+        value: "game-16"
+      - key: SERVER_PORT
+        value: "25581"
+      - key: WORLD_REGION
+        value: "village-1"
+      - key: MANAGEMENT_URL
+        value: "mc-management.onrender.com"
+      - key: PROXY_URL
+        value: "mc-proxy-main.onrender.com"
+      - key: GDRIVE_FOLDER_ID
+        valueFrom:
+          name: gdrive-folder-id
+          type: secret
+      - key: GDRIVE_CREDENTIALS_JSON
+        valueFrom:
+          name: gdrive-credentials
+          type: secret
+      - key: GDRIVE_TOKEN_PICKLE
+        valueFrom:
+          name: gdrive-token
+          type: secret
+      - key: SYNC_INTERVAL
+        value: "300"
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    numInstances: 1
+
+  # ========================
+  # MANAGEMENT DASHBOARD
+  # ========================
+  - type: web
+    name: mc-management
+    env: docker
+    plan: free
+    docker:
+      dockerfile: management/Dockerfile
+    envVars:
+      - key: SERVICE_TYPE
+        value: "management"
+      - key: NODE_ID
+        value: "dashboard-main"
+      - key: DASHBOARD_PORT
+        value: "10000"
+      - key: RCON_TIMEOUT
+        value: "10"
+      - key: GDRIVE_FOLDER_ID
+        valueFrom:
+          name: gdrive-folder-id
+          type: secret
+      - key: GDRIVE_CREDENTIALS_JSON
+        valueFrom:
+          name: gdrive-credentials
+          type: secret
+      - key: GDRIVE_TOKEN_PICKLE
+        valueFrom:
+          name: gdrive-token
+          type: secret
+      - key: CLUSTER_VERSION
+        value: "2.0.0"
+    autoDeploy: true
+    healthCheckPath: /health
+    numInstances: 1
+    ports:
+      - port: 10000
+        protocol: HTTP
+
+# ========================
+# SECRETS (Set in Render Dashboard)
+# ========================
+secrets:
+  - name: gdrive-folder-id
+    value: "your_google_drive_folder_id"
+  - name: gdrive-credentials
+    value: "{\"installed\":{\"client_id\":\"...\",\"project_id\":\"...\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_secret\":\"...\",\"redirect_uris\":[\"http://localhost\"]}}"
+  - name: gdrive-token
+    value: "base64_encoded_token_pickle"
