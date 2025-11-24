@@ -1,11 +1,11 @@
 listeners:
-- host: 0.0.0.0:25575  # ← CHANGED PORT
+- host: 0.0.0.0:25575
   max_players: 400
-  motd: "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a8GB RAM §7| §e400 Players"
+  motd: "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a6.88GB RAM §7| §e400 Players"
   priority: 1
   tab_list: GLOBAL_PING
   query_enabled: false
-  query_port: 25575    # ← CHANGED PORT
+  query_port: 25575
   forced_hosts: {}
   ping_passthrough: false
   proxy_protocol: false
@@ -26,10 +26,65 @@ groups:
 servers:
   spawn:
     motd: "§bSpawn Region §7| §6PaperMC 1.21.10"
-    address: "mc-game-1:25566"
+    address: "mc-game-1.onrender.com:25566"
     restricted: false
   nether:
     motd: "§cNether World §7| §6PaperMC 1.21.10"
-    address: "mc-game-2:25567"
+    address: "mc-game-2.onrender.com:25567"
     restricted: false
-  # ... rest of servers remain the same
+  end:
+    motd: "§dThe End §7| §6PaperMC 1.21.10"
+    address: "mc-game-3.onrender.com:25568"
+    restricted: false
+  wilderness-1:
+    motd: "§aWilderness I §7| §6PaperMC 1.21.10"
+    address: "mc-game-4.onrender.com:25569"
+    restricted: false
+  wilderness-2:
+    motd: "§aWilderness II §7| §6PaperMC 1.21.10"
+    address: "mc-game-5.onrender.com:25570"
+    restricted: false
+  wilderness-3:
+    motd: "§aWilderness III §7| §6PaperMC 1.21.10"
+    address: "mc-game-6.onrender.com:25571"
+    restricted: false
+  wilderness-4:
+    motd: "§aWilderness IV §7| §6PaperMC 1.21.10"
+    address: "mc-game-7.onrender.com:25572"
+    restricted: false
+  ocean-1:
+    motd: "§9Ocean I §7| §6PaperMC 1.21.10"
+    address: "mc-game-8.onrender.com:25573"
+    restricted: false
+  ocean-2:
+    motd: "§9Ocean II §7| §6PaperMC 1.21.10"
+    address: "mc-game-9.onrender.com:25574"
+    restricted: false
+  mountain-1:
+    motd: "§7Mountain I §7| §6PaperMC 1.21.10"
+    address: "mc-game-10.onrender.com:25575"
+    restricted: false
+  mountain-2:
+    motd: "§7Mountain II §7| §6PaperMC 1.21.10"
+    address: "mc-game-11.onrender.com:25576"
+    restricted: false
+  desert-1:
+    motd: "§eDesert I §7| §6PaperMC 1.21.10"
+    address: "mc-game-12.onrender.com:25577"
+    restricted: false
+  desert-2:
+    motd: "§eDesert II §7| §6PaperMC 1.21.10"
+    address: "mc-game-13.onrender.com:25578"
+    restricted: false
+  forest-1:
+    motd: "§2Forest I §7| §6PaperMC 1.21.10"
+    address: "mc-game-14.onrender.com:25579"
+    restricted: false
+  forest-2:
+    motd: "§2Forest II §7| §6PaperMC 1.21.10"
+    address: "mc-game-15.onrender.com:25580"
+    restricted: false
+  village-1:
+    motd: "§6Village I §7| §6PaperMC 1.21.10"
+    address: "mc-game-16.onrender.com:25581"
+    restricted: false
