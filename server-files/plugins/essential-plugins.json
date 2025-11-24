@@ -1,0 +1,44 @@
+{
+  "essential_plugins": [
+    {
+      "name": "WorldEdit",
+      "description": "In-game world editing tools",
+      "url": "https://github.com/EngineHub/WorldEdit/releases/latest/download/worldedit-bukkit-7.2.15.jar",
+      "required": true
+    },
+    {
+      "name": "AutoReload",
+      "description": "Automatic plugin reloading",
+      "url": "https://github.com/monun/auto-reload/releases/latest/download/auto-reload-1.0.0.jar",
+      "required": true
+    }
+  ],
+  "recommended_plugins": [
+    {
+      "name": "Dynmap",
+      "description": "Live map of your Minecraft world",
+      "url": "https://github.com/PluginsCDTribe/Dynmap/releases/latest/download/Dynmap-3.6.2-spigot.jar",
+      "required": false
+    },
+    {
+      "name": "ProtocolLib",
+      "description": "Library for packet manipulation",
+      "url": "https://github.com/dmulloy2/ProtocolLib/releases/latest/download/ProtocolLib.jar",
+      "required": false
+    },
+    {
+      "name": "Vault",
+      "description": "Permission and economy API",
+      "url": "https://github.com/MilkBowl/Vault/releases/latest/download/Vault.jar",
+      "required": false
+    }
+  ],
+  "cluster_plugins": [
+    {
+      "name": "MultiWorld",
+      "description": "Multiple world management",
+      "url": "https://dev.bukkit.org/projects/multiverse-core/files",
+      "required": false
+    }
+  ]
+}
