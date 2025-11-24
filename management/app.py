@@ -22,18 +22,14 @@ def dashboard():
     return render_template('dashboard.html', 
                          servers=servers,
                          management_node="mc-management",
-                         version="2.0.0",
-                         total_ram="6GB",
-                         total_players=320)
+                         version="3.0.0",
+                         total_ram="6.47GB",
+                         total_players=400,
+                         features="Custom World + Plugins")
 
 @app.route('/health')
 def health():
     return jsonify({"status": "healthy", "service": "mc-management"})
-
-# Render auto-detects health at root path
-@app.route('/')
-def root():
-    return dashboard()
 
 def get_region_name(server_num):
     regions = {
