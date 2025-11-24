@@ -1,0 +1,50 @@
+{
+  "cluster": {
+    "version": "2.0.0",
+    "name": "Minecraft Distributed Cluster",
+    "description": "High-performance distributed Minecraft hosting with Google Drive integration"
+  },
+  "services": {
+    "proxy": {
+      "type": "bungeecord",
+      "port": 25565,
+      "max_players": 400,
+      "motd": "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a8GB RAM §7| §e400 Players"
+    },
+    "game_servers": {
+      "count": 16,
+      "ram_per_server": "512MB",
+      "total_ram": "8GB",
+      "version": "1.21.10",
+      "software": "PaperMC"
+    },
+    "management": {
+      "port": 10000,
+      "features": ["rcon", "file_manager", "analytics", "backup"]
+    }
+  },
+  "regions": {
+    "game-1": {"name": "spawn", "type": "spawn", "color": "blue"},
+    "game-2": {"name": "nether", "type": "nether", "color": "red"},
+    "game-3": {"name": "end", "type": "end", "color": "purple"},
+    "game-4": {"name": "wilderness-1", "type": "forest", "color": "green"},
+    "game-5": {"name": "wilderness-2", "type": "plains", "color": "green"},
+    "game-6": {"name": "wilderness-3", "type": "hills", "color": "green"},
+    "game-7": {"name": "wilderness-4", "type": "swamp", "color": "green"},
+    "game-8": {"name": "ocean-1", "type": "ocean", "color": "aqua"},
+    "game-9": {"name": "ocean-2", "type": "deep_ocean", "color": "aqua"},
+    "game-10": {"name": "mountain-1", "type": "mountains", "color": "gray"},
+    "game-11": {"name": "mountain-2", "type": "peaks", "color": "gray"},
+    "game-12": {"name": "desert-1", "type": "desert", "color": "gold"},
+    "game-13": {"name": "desert-2", "type": "mesa", "color": "gold"},
+    "game-14": {"name": "forest-1", "type": "birch_forest", "color": "dark_green"},
+    "game-15": {"name": "forest-2", "type": "dark_forest", "color": "dark_green"},
+    "game-16": {"name": "village-1", "type": "village", "color": "yellow"}
+  },
+  "google_drive": {
+    "enabled": true,
+    "client_id": "740511594522-ofu7utfiedtpemu0cg9ghommdqoicbjf.apps.googleusercontent.com",
+    "project_id": "termux-479006",
+    "folders": ["plugins", "worlds", "configs", "backups", "logs"]
+  }
+}
