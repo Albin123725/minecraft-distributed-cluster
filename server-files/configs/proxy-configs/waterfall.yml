@@ -1,0 +1,82 @@
+# Waterfall Configuration File
+# This is the main configuration file for Waterfall.
+# As you can see, there's tons to configure. Some options may impact gameplay, so use
+# with caution, and make sure you know what each option does before configuring.
+# 
+# For a reference for any variable inside this file, check out the Waterfall wiki at
+# https://github.com/PaperMC/Waterfall/wiki
+#
+# If you need help with the configuration or have any questions related to Waterfall,
+# join us in our Discord or check the forums.
+#
+# Discord: https://discord.gg/papermc
+# Forums: https://forums.papermc.io/
+
+# The connection throttle time in milliseconds
+connection_throttle: 4000
+
+# The timeout time in milliseconds
+timeout: 30000
+
+# The maximum size of a packet in bytes
+max_packet_size: 2097152
+
+# The motd that will be displayed in the server list
+motd: '&bPaperMC Distributed Cluster &7| &616 Servers &7| &a8GB RAM &7| &e400 Players'
+
+# Whether to show the player's name in the server list
+show_player_name: true
+
+# The priority list of servers
+priorities:
+- spawn
+- nether
+- end
+- wilderness-1
+- wilderness-2
+- wilderness-3
+- wilderness-4
+- ocean-1
+- ocean-2
+- mountain-1
+- mountain-2
+- desert-1
+- desert-2
+- forest-1
+- forest-2
+- village-1
+
+# List of forced host mappings
+forced_hosts: {}
+
+# Logging configuration
+log_commands: false
+listeners:
+- host: 0.0.0.0:25565
+  max_players: 400
+  tab_list: GLOBAL_PING
+  query_enabled: false
+  query_port: 25565
+  force_default_server: false
+  ping_passthrough: false
+  proxy_protocol: false
+
+# IP forwarding settings
+ip_forward: true
+online_mode: false
+
+# Player limits
+player_limit: 400
+
+# Server ping settings
+disable_modern_tab_limiter: false
+disable_tab_list_rewrite: false
+
+# Miscellaneous settings
+prevent_proxy_connections: false
+groups:
+  md_5:
+  - bungeecord.command.alert
+  - bungeecord.command.server
+  - bungeecord.command.list
+network_compression_threshold: 256
