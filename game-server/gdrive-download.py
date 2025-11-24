@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import os
 import sys
-sys.path.append('/app')
+import argparse
 
+# Import from current directory
 from gdrive_manager import GoogleDriveManager
 
 def main():
-    import argparse
-    
     parser = argparse.ArgumentParser(description='Download files from Google Drive')
     parser.add_argument('--type', required=True, choices=['plugins', 'worlds', 'configs'])
     parser.add_argument('--folder-id', required=True)
