@@ -1,7 +1,7 @@
 listeners:
 - host: 0.0.0.0:25575
   max_players: 400
-  motd: "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a6.88GB RAM §7| §e400 Players"
+  motd: "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a6GB RAM §7| §e320 Players"
   priority: 1
   tab_list: GLOBAL_PING
   query_enabled: false
