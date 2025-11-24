@@ -12,7 +12,6 @@ COPY config.yml .
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Expose Minecraft port + default health port
 EXPOSE 25575 10000
 
 CMD ["./start.sh"]
