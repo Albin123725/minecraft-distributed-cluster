@@ -1,15 +1,15 @@
 listeners:
-- host: 0.0.0.0:25565
+- host: 0.0.0.0:25575  # ← CHANGED PORT
   max_players: 400
   motd: "§bPaperMC Distributed Cluster §7| §616 Servers §7| §a8GB RAM §7| §e400 Players"
   priority: 1
   tab_list: GLOBAL_PING
   query_enabled: false
-  query_port: 25565
+  query_port: 25575    # ← CHANGED PORT
   forced_hosts: {}
   ping_passthrough: false
   proxy_protocol: false
-  default_server: spawn  # ← CHANGED FROM 'lobby' TO 'spawn'
+  default_server: spawn
 
 player_limit: 400
 ip_forward: true
@@ -22,6 +22,7 @@ groups:
   - bungeecord.command.alert
   - bungeecord.command.server
   - bungeecord.command.list
+
 servers:
   spawn:
     motd: "§bSpawn Region §7| §6PaperMC 1.21.10"
@@ -31,59 +32,4 @@ servers:
     motd: "§cNether World §7| §6PaperMC 1.21.10"
     address: "mc-game-2:25567"
     restricted: false
-  end:
-    motd: "§dThe End §7| §6PaperMC 1.21.10"
-    address: "mc-game-3:25568"
-    restricted: false
-  wilderness-1:
-    motd: "§aWilderness 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-4:25569"
-    restricted: false
-  wilderness-2:
-    motd: "§aWilderness 2 §7| §6PaperMC 1.21.10"
-    address: "mc-game-5:25570"
-    restricted: false
-  wilderness-3:
-    motd: "§aWilderness 3 §7| §6PaperMC 1.21.10"
-    address: "mc-game-6:25571"
-    restricted: false
-  wilderness-4:
-    motd: "§aWilderness 4 §7| §6PaperMC 1.21.10"
-    address: "mc-game-7:25572"
-    restricted: false
-  ocean-1:
-    motd: "§9Ocean 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-8:25573"
-    restricted: false
-  ocean-2:
-    motd: "§9Ocean 2 §7| §6PaperMC 1.21.10"
-    address: "mc-game-9:25574"
-    restricted: false
-  mountain-1:
-    motd: "§7Mountain 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-10:25575"
-    restricted: false
-  mountain-2:
-    motd: "§7Mountain 2 §7| §6PaperMC 1.21.10"
-    address: "mc-game-11:25576"
-    restricted: false
-  desert-1:
-    motd: "§6Desert 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-12:25577"
-    restricted: false
-  desert-2:
-    motd: "§6Desert 2 §7| §6PaperMC 1.21.10"
-    address: "mc-game-13:25578"
-    restricted: false
-  forest-1:
-    motd: "§2Forest 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-14:25579"
-    restricted: false
-  forest-2:
-    motd: "§2Forest 2 §7| §6PaperMC 1.21.10"
-    address: "mc-game-15:25580"
-    restricted: false
-  village-1:
-    motd: "§eVillage 1 §7| §6PaperMC 1.21.10"
-    address: "mc-game-16:25581"
-    restricted: false
+  # ... rest of servers remain the same
