@@ -1,208 +1,110 @@
 #!/bin/bash
 
-# HYBRID SYSTEM: SPLIT + TRANSFER
+# ULTRA-OPTIMIZED 400MB - MAX PERFORMANCE WITHIN 500MB LIMIT
 
 # Get server info
 if [[ $RENDER_SERVICE_NAME == *"game-1"* ]]; then SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
-# ... (same mapping for all 16 servers)
+elif [[ $RENDER_SERVICE_NAME == *"game-2"* ]]; then SERVER_NUMBER=2; SERVER_PORT=25567; WORLD_REGION="nether"
+elif [[ $RENDER_SERVICE_NAME == *"game-3"* ]]; then SERVER_NUMBER=3; SERVER_PORT=25568; WORLD_REGION="end"
+elif [[ $RENDER_SERVICE_NAME == *"game-4"* ]]; then SERVER_NUMBER=4; SERVER_PORT=25569; WORLD_REGION="wilderness-1"
+elif [[ $RENDER_SERVICE_NAME == *"game-5"* ]]; then SERVER_NUMBER=5; SERVER_PORT=25570; WORLD_REGION="wilderness-2"
+elif [[ $RENDER_SERVICE_NAME == *"game-6"* ]]; then SERVER_NUMBER=6; SERVER_PORT=25571; WORLD_REGION="wilderness-3"
+elif [[ $RENDER_SERVICE_NAME == *"game-7"* ]]; then SERVER_NUMBER=7; SERVER_PORT=25572; WORLD_REGION="wilderness-4"
+elif [[ $RENDER_SERVICE_NAME == *"game-8"* ]]; then SERVER_NUMBER=8; SERVER_PORT=25573; WORLD_REGION="ocean-1"
+elif [[ $RENDER_SERVICE_NAME == *"game-9"* ]]; then SERVER_NUMBER=9; SERVER_PORT=25574; WORLD_REGION="ocean-2"
+elif [[ $RENDER_SERVICE_NAME == *"game-10"* ]]; then SERVER_NUMBER=10; SERVER_PORT=25575; WORLD_REGION="mountain-1"
+elif [[ $RENDER_SERVICE_NAME == *"game-11"* ]]; then SERVER_NUMBER=11; SERVER_PORT=25576; WORLD_REGION="mountain-2"
+elif [[ $RENDER_SERVICE_NAME == *"game-12"* ]]; then SERVER_NUMBER=12; SERVER_PORT=25577; WORLD_REGION="desert-1"
+elif [[ $RENDER_SERVICE_NAME == *"game-13"* ]]; then SERVER_NUMBER=13; SERVER_PORT=25578; WORLD_REGION="desert-2"
+elif [[ $RENDER_SERVICE_NAME == *"game-14"* ]]; then SERVER_NUMBER=14; SERVER_PORT=25579; WORLD_REGION="forest-1"
+elif [[ $RENDER_SERVICE_NAME == *"game-15"* ]]; then SERVER_NUMBER=15; SERVER_PORT=25580; WORLD_REGION="forest-2"
+elif [[ $RENDER_SERVICE_NAME == *"game-16"* ]]; then SERVER_NUMBER=16; SERVER_PORT=25581; WORLD_REGION="village-1"
+else SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
 fi
 
-echo "🎮 Server $SERVER_NUMBER - HYBRID MODE: Split + Transfer"
+echo "🎮 Server $SERVER_NUMBER - ULTRA OPTIMIZED 400MB"
+echo "💾 BUDGET: 500MB Available | 400MB Used | 100MB Safety"
 
-# PHASE 1: INITIAL WORK SPLIT
-if [ $SERVER_NUMBER -le 4 ]; then
-    # SERVERS 1-4: HEAVY WORK (Initial split)
-    INITIAL_WORKLOAD="heavy"
-    TASK="world_generation"
-    MEMORY="280M"
-    echo "🏋️ PHASE 1: Assigned HEAVY work (world generation)"
-    
-elif [ $SERVER_NUMBER -le 8 ]; then
-    # SERVERS 5-8: MEDIUM WORK (Initial split)  
-    INITIAL_WORKLOAD="medium"
-    TASK="plugin_setup"
-    MEMORY="250M"
-    echo "⚖️ PHASE 1: Assigned MEDIUM work (plugin setup)"
-    
-else
-    # SERVERS 9-16: LIGHT WORK (Initial split)
-    INITIAL_WORKLOAD="light" 
-    TASK="ready_server"
-    MEMORY="220M"
-    echo "⚡ PHASE 1: Assigned LIGHT work (ready server)"
+# Start health server immediately
+echo "✅ Server $SERVER_NUMBER - Optimized 400MB" > /app/index.html
+python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
+HEALTH_PID=$!
+
+# MINIMAL STAGGER - 90 seconds between servers
+WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 90 ))
+echo "⏰ Quick stagger: ${WAIT_TIME}s..."
+sleep $WAIT_TIME
+
+echo "🚀 STARTING OPTIMIZED SERVER $SERVER_NUMBER"
+
+# Download PaperMC (optimized URL - faster download)
+if [ ! -f "/app/paper.jar" ]; then
+    echo "📥 Downloading optimized PaperMC..."
+    wget -q --timeout=30 -O /app/paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
+    echo "✅ PaperMC downloaded"
 fi
 
-CURRENT_WORKLOAD=$INITIAL_WORKLOAD
-CURRENT_TASK=$TASK
-
-# WORK TRANSFER COORDINATOR
-COORDINATOR_URL="https://mc-management.onrender.com"
-
-# FUNCTION: Transfer work to another server
-transfer_work_out() {
-    echo "🔄 TRANSFERING WORK OUT: This server is overloaded"
-    
-    # Find a light server to transfer to
-    for candidate in 9 10 11 12 13 14 15 16; do
-        RESPONSE=$(curl -s "$COORDINATOR_URL/can_accept_work/game-$candidate")
-        if echo "$RESPONSE" | grep -q '"can_accept":true'; then
-            echo "📤 Transferring $CURRENT_TASK to Server $candidate"
-            curl -s "$COORDINATOR_URL/transfer_work/game-$SERVER_NUMBER/game-$candidate/$CURRENT_TASK"
-            
-            # Switch to light mode
-            CURRENT_WORKLOAD="light"
-            CURRENT_TASK="ready_server" 
-            MEMORY="220M"
-            apply_light_settings
-            echo "✅ Now in LIGHT mode (work transferred to Server $candidate)"
-            return
-        fi
-    done
-    echo "⚠️ No available servers for transfer - reducing workload instead"
-    reduce_workload
-}
-
-# FUNCTION: Accept transferred work
-accept_transferred_work() {
-    echo "🔄 ACCEPTING TRANSFERRED WORK"
-    CURRENT_WORKLOAD="heavy"
-    CURRENT_TASK="transferred_work"
-    MEMORY="280M"
-    apply_heavy_settings
-    echo "✅ Now handling TRANSFERRED work"
-}
-
-# FUNCTION: Monitor and manage work transfers
-work_transfer_manager() {
-    while true; do
-        # Check if we should transfer work out (if heavy/medium and struggling)
-        if [[ "$CURRENT_WORKLOAD" == "heavy" || "$CURRENT_WORKLOAD" == "medium" ]]; then
-            # Simulate memory check - in real system, use actual memory monitoring
-            MEM_USAGE=$((RANDOM % 100))
-            if [ $MEM_USAGE -gt 75 ]; then
-                echo "🚨 High memory usage detected: ${MEM_USAGE}%"
-                transfer_work_out
-            fi
-        fi
-        
-        # Check if we can accept transferred work (if light and available)
-        if [[ "$CURRENT_WORKLOAD" == "light" ]]; then
-            RESPONSE=$(curl -s "$COORDINATOR_URL/has_pending_transfers")
-            if echo "$RESPONSE" | grep -q '"pending_transfers":true'; then
-                accept_transferred_work
-            fi
-        fi
-        
-        sleep 30
-    done
-}
-
-# Apply settings based on current workload
-apply_heavy_settings() {
-    cat > /app/server.properties << EOF
+# ULTRA-OPTIMIZED SERVER PROPERTIES
+cat > /app/server.properties << EOF
+# Performance Optimized - 400MB Budget
 server-port=$SERVER_PORT
-view-distance=4
-simulation-distance=3
-max-players=20
+view-distance=6
+simulation-distance=4
+max-players=25
 online-mode=false
-motd=HEAVY-$SERVER_NUMBER-$WORLD_REGION
+motd=🚀 400MB-Optimized • $WORLD_REGION • 25 Players
 level-name=world
 level-type=default
-max-world-size=3000
-spawn-protection=0
-network-compression-threshold=128
+max-world-size=6000
+spawn-protection=16
+network-compression-threshold=256
 allow-nether=true
 allow-end=true
 enable-rcon=true
+rcon.port=$((SERVER_PORT + 10000))
+rcon.password=pass-$(openssl rand -hex 8)
+allow-flight=true
+enable-command-block=true
 generate-structures=true
+announce-player-achievements=true
+player-idle-timeout=0
+entity-broadcast-range-percentage=100
+max-tick-time=60000
+sync-chunk-writes=true
 EOF
-}
-
-apply_medium_settings() {
-    cat > /app/server.properties << EOF
-server-port=$SERVER_PORT
-view-distance=3
-simulation-distance=2
-max-players=15
-online-mode=false
-motd=MEDIUM-$SERVER_NUMBER-$WORLD_REGION
-level-name=world
-level-type=flat
-max-world-size=1500
-spawn-protection=0
-network-compression-threshold=64
-allow-nether=true
-allow-end=true
-enable-rcon=true
-generate-structures=false
-EOF
-}
-
-apply_light_settings() {
-    cat > /app/server.properties << EOF
-server-port=$SERVER_PORT
-view-distance=2
-simulation-distance=1
-max-players=10
-online-mode=false
-motd=LIGHT-$SERVER_NUMBER-$WORLD_REGION
-level-name=world
-level-type=flat
-max-world-size=500
-spawn-protection=0
-network-compression-threshold=32
-allow-nether=false
-allow-end=false
-enable-rcon=false
-generate-structures=false
-EOF
-}
-
-# Reduce workload without transferring
-reduce_workload() {
-    echo "🔻 Reducing workload (no transfer available)"
-    if [ "$CURRENT_WORKLOAD" = "heavy" ]; then
-        CURRENT_WORKLOAD="medium"
-        MEMORY="250M"
-        apply_medium_settings
-    elif [ "$CURRENT_WORKLOAD" = "medium" ]; then
-        CURRENT_WORKLOAD="light" 
-        MEMORY="220M"
-        apply_light_settings
-    fi
-}
-
-# Start health server
-python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
-
-# Apply initial settings based on split
-case $INITIAL_WORKLOAD in
-    "heavy") apply_heavy_settings ;;
-    "medium") apply_medium_settings ;;
-    "light") apply_light_settings ;;
-esac
 
 echo "eula=true" > /app/eula.txt
-mkdir -p /app/world
+mkdir -p /app/world /app/plugins
 
-# Download PaperMC if needed
-if [ ! -f "/app/paper.jar" ]; then
-    echo "📥 Downloading PaperMC..."
-    wget -O /app/paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
-fi
+echo "✅ ULTRA-OPTIMIZED CONFIG:"
+echo "   • View Distance: 6 chunks"
+echo "   • Simulation: 4 chunks"
+echo "   • Max Players: 25"
+echo "   • World Size: 6000 blocks"
+echo "   • Structures: Enabled"
+echo "   • Nether/End: Enabled"
 
-echo "✅ HYBRID SYSTEM READY: Split=$INITIAL_WORKLOAD, Memory=$MEMORY"
-
-# Start work transfer manager in background
-work_transfer_manager &
-TRANSFER_PID=$!
-
-# Start Minecraft
-echo "🚀 Starting with $MEMORY heap"
-java -Xmx$MEMORY -Xms150M \
+# OPTIMIZED JVM FLAGS FOR 400MB
+echo "🚀 Starting with OPTIMIZED 370MB heap + 30MB system = 400MB total"
+java -Xmx370M -Xms256M \
      -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=200 \
+     -XX:MaxGCPauseMillis=50 \
+     -XX:+UnlockExperimentalVMOptions \
+     -XX:+ParallelRefProcEnabled \
+     -XX:+DisableExplicitGC \
+     -XX:+AlwaysPreTouch \
+     -XX:MaxMetaspaceSize=80M \
+     -XX:InitiatingHeapOccupancyPercent=35 \
+     -XX:G1HeapRegionSize=8M \
+     -XX:G1NewSizePercent=30 \
+     -XX:G1MaxNewSizePercent=40 \
+     -XX:G1ReservePercent=15 \
+     -XX:G1HeapWastePercent=5 \
+     -XX:G1MixedGCCountTarget=4 \
+     -XX:+PerfDisableSharedMem \
+     -XX:+OptimizeStringConcat \
+     -XX:+UseFastAccessorMethods \
      -jar paper.jar nogui
 
 # Cleanup
-kill $TRANSFER_PID 2>/dev/null
+kill $HEALTH_PID 2>/dev/null
