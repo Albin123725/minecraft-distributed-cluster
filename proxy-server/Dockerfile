@@ -13,6 +13,6 @@ COPY start.sh .
 COPY health-check.sh .
 RUN chmod +x start.sh health-check.sh
 
-EXPOSE 25575  # ← CHANGED PORT
+EXPOSE 25575
 
 CMD ["./start.sh"]
