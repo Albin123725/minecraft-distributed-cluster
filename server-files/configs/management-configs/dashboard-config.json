@@ -1,0 +1,58 @@
+{
+  "dashboard": {
+    "title": "Minecraft Distributed Cluster",
+    "version": "2.0.0",
+    "refresh_interval": 30000,
+    "theme": "dark",
+    "features": {
+      "rcon_management": true,
+      "file_upload": true,
+      "health_monitoring": true,
+      "player_analytics": true,
+      "backup_management": true
+    }
+  },
+  "servers": {
+    "proxy": {
+      "name": "mc-proxy-main",
+      "port": 25565,
+      "type": "bungeecord"
+    },
+    "game_servers": {
+      "count": 16,
+      "naming_pattern": "mc-game-{id}",
+      "port_range": [25566, 25581]
+    },
+    "management": {
+      "name": "mc-management",
+      "port": 10000,
+      "services": ["rcon-manager", "dashboard", "file-manager", "health-api"]
+    }
+  },
+  "monitoring": {
+    "health_check_interval": 60000,
+    "metrics_retention": 86400000,
+    "alert_thresholds": {
+      "cpu_usage": 80,
+      "memory_usage": 85,
+      "disk_usage": 90,
+      "player_count": 350
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "retention_days": 7,
+    "compression": true
+  },
+  "google_drive": {
+    "enabled": true,
+    "sync_interval": 300000,
+    "folders": {
+      "plugins": "minecraft-cluster/plugins",
+      "worlds": "minecraft-cluster/worlds",
+      "configs": "minecraft-cluster/configs",
+      "backups": "minecraft-cluster/backups"
+    }
+  }
+}
