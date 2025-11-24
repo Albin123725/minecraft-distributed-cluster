@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# COORDINATED STARTUP SYSTEM
+# INTELLIGENT AUTO-DISTRIBUTION SYSTEM
 if [[ $RENDER_SERVICE_NAME == *"game-1"* ]]; then SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
 elif [[ $RENDER_SERVICE_NAME == *"game-2"* ]]; then SERVER_NUMBER=2; SERVER_PORT=25567; WORLD_REGION="nether"
 elif [[ $RENDER_SERVICE_NAME == *"game-3"* ]]; then SERVER_NUMBER=3; SERVER_PORT=25568; WORLD_REGION="end"
@@ -20,43 +20,78 @@ elif [[ $RENDER_SERVICE_NAME == *"game-16"* ]]; then SERVER_NUMBER=16; SERVER_PO
 else SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
 fi
 
+SERVER_ID="game-$SERVER_NUMBER"
+LOAD_BALANCER="https://mc-management.onrender.com"
+
 echo "🎮 Server: $SERVER_NUMBER | Region: $WORLD_REGION"
-echo "💾 COORDINATED STARTUP: Only 2 servers can start simultaneously"
+echo "💾 INTELLIGENT AUTO-DISTRIBUTION: Workload automatically balances across cluster"
 
 # Start health server
-echo "🔄 Server $SERVER_NUMBER - Requesting startup permission" > /app/index.html
+echo "🔄 $SERVER_ID - Contacting load balancer" > /app/index.html
 python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
 HEALTH_PID=$!
 
-# COORDINATION SYSTEM
-COORDINATOR_URL="https://mc-management.onrender.com"
-MAX_RETRIES=30
-RETRY_DELAY=30
+# MEMORY MONITORING FUNCTION
+monitor_memory() {
+    while true; do
+        MEM_USAGE=$(free | awk 'NR==2{printf "%.0f", $3*100/$2 }')
+        if [ $MEM_USAGE -gt 80 ]; then
+            echo "🚨 HIGH MEMORY USAGE: ${MEM_USAGE}% - Requesting workload redistribution"
+            # Signal load balancer to redistribute work
+            curl -s "$LOAD_BALANCER/task_completed/$SERVER_ID/emergency_redistribute" > /dev/null 2>&1
+            # Reduce own workload
+            reduce_workload
+        fi
+        sleep 10
+    done
+}
 
-echo "📞 Contacting coordinator at $COORDINATOR_URL..."
-
-for i in $(seq 1 $MAX_RETRIES); do
-    RESPONSE=$(curl -s "$COORDINATOR_URL/request_start/game-$SERVER_NUMBER" || echo '{"status":"error"}')
-    
-    if echo "$RESPONSE" | grep -q '"status":"approved"'; then
-        echo "✅ PERMISSION GRANTED: Starting server $SERVER_NUMBER"
-        break
-    elif echo "$RESPONSE" | grep -q '"status":"queued"'; then
-        POSITION=$(echo "$RESPONSE" | grep -o '"position":[0-9]*' | cut -d: -f2)
-        echo "⏳ IN QUEUE: Position $POSITION - Waiting ${RETRY_DELAY}s..."
-        sleep $RETRY_DELAY
-    else
-        echo "🔄 Coordinator unavailable (attempt $i/$MAX_RETRIES) - Waiting ${RETRY_DELAY}s..."
-        sleep $RETRY_DELAY
+reduce_workload() {
+    echo "🔻 Reducing workload due to high memory..."
+    # Emergency measures: reduce view distance, kick some players, etc.
+    if [ -f "/app/server.properties" ]; then
+        sed -i 's/view-distance=.*/view-distance=2/' /app/server.properties
+        sed -i 's/simulation-distance=.*/simulation-distance=1/' /app/server.properties
+        echo "✅ Emergency: Reduced view distance to 2"
     fi
-    
-    if [ $i -eq $MAX_RETRIES ]; then
-        echo "⚠️  Coordinator timeout - Starting anyway with ULTRA-LOW memory"
-    fi
-done
+}
 
-# ULTRA-LOW MEMORY FOR ALL SERVERS (GUARANTEED WORKING)
-echo "🚀 STARTING WITH ULTRA-LOW MEMORY: 200MB heap"
+# REQUEST WORKLOAD ASSIGNMENT
+echo "📞 Requesting workload assignment from load balancer..."
+
+TASK_ASSIGNMENT=$(curl -s "$LOAD_BALANCER/assign_task/world_generation/$SERVER_ID")
+echo "📋 Load Balancer Response: $TASK_ASSIGNMENT"
+
+if echo "$TASK_ASSIGNMENT" | grep -q '"status":"assigned"'; then
+    echo "✅ ASSIGNED: This server will handle world generation"
+    TASK_LEVEL="heavy"
+elif echo "$TASK_ASSIGNMENT" | grep -q '"status":"redirected"'; then
+    ASSIGNED_TO=$(echo "$TASK_ASSIGNMENT" | grep -o '"assigned_to":"[^"]*"' | cut -d'"' -f4)
+    echo "🔄 REDIRECTED: World generation assigned to $ASSIGNED_TO (this server is light)"
+    TASK_LEVEL="light"
+else
+    echo "⏳ QUEUED: Waiting for available capacity"
+    TASK_LEVEL="light"  # Start light while waiting
+fi
+
+# Start memory monitoring in background
+monitor_memory &
+MONITOR_PID=$!
+
+# CONFIGURE BASED ON ASSIGNED WORKLOAD
+if [ "$TASK_LEVEL" = "heavy" ]; then
+    echo "🏋️ HEAVY WORKLOAD: This server handles world generation"
+    MEMORY="280M"
+    VIEW_DISTANCE="4"
+    SIMULATION_DISTANCE="2"
+    MAX_PLAYERS="15"
+else
+    echo "⚡ LIGHT WORKLOAD: Minimal resource usage"
+    MEMORY="220M" 
+    VIEW_DISTANCE="2"
+    SIMULATION_DISTANCE="1"
+    MAX_PLAYERS="8"
+fi
 
 # Download PaperMC
 if [ ! -f "/app/paper.jar" ]; then
@@ -64,53 +99,46 @@ if [ ! -f "/app/paper.jar" ]; then
     wget -O /app/paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
 fi
 
-# EXTREME LOW MEMORY CONFIG
+# Server configuration
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
-view-distance=2
-simulation-distance=1
-max-players=8
+view-distance=$VIEW_DISTANCE
+simulation-distance=$SIMULATION_DISTANCE
+max-players=$MAX_PLAYERS
 online-mode=false
-motd=Coordinated-$SERVER_NUMBER
+motd=AutoBalanced-$SERVER_NUMBER-$TASK_LEVEL
 level-name=world
 level-type=flat
-max-world-size=300
+max-world-size=1000
 spawn-protection=0
-network-compression-threshold=16
-entity-broadcast-range-percentage=5
-max-entity-collisions=1
-max-tick-time=240000
-allow-nether=false
-allow-end=false
-enable-rcon=false
+network-compression-threshold=32
+allow-nether=true
+allow-end=true
+enable-rcon=true
+rcon.port=$((SERVER_PORT + 10000))
+rcon.password=pass-$SERVER_NUMBER
 allow-flight=false
 enable-command-block=false
-generate-structures=false
-difficulty=peaceful
-max-build-height=64
+generate-structures=true
 EOF
 
 echo "eula=true" > /app/eula.txt
 mkdir -p /app/world
 
-echo "✅ Configured for 200MB operation"
+echo "✅ Configured: $MEMORY heap, $TASK_LEVEL workload"
 
-# Notify coordinator we're starting
-curl -s "$COORDINATOR_URL/finished/game-$SERVER_NUMBER" > /dev/null 2>&1 || true
-
-# GUARANTEED MEMORY LIMITS
-echo "🚀 Starting with 180MB heap (ABSOLUTE MINIMUM)..."
-java -Xmx180M -Xms120M \
+# Start server
+echo "🚀 Starting with intelligent memory management..."
+java -Xmx$MEMORY -Xms150M \
      -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=400 \
+     -XX:MaxGCPauseMillis=200 \
      -XX:+UnlockExperimentalVMOptions \
      -XX:+DisableExplicitGC \
-     -XX:MaxMetaspaceSize=40M \
-     -XX:+UseStringDeduplication \
-     -XX:MaxRAM=350M \
      -jar paper.jar nogui
 
-# Notify coordinator we're done
-curl -s "$COORDINATOR_URL/finished/game-$SERVER_NUMBER" > /dev/null 2>&1 || true
-
+# Cleanup
+kill $MONITOR_PID 2>/dev/null
 kill $HEALTH_PID 2>/dev/null
+
+# Notify load balancer we're done
+curl -s "$LOAD_BALANCER/task_completed/$SERVER_ID/world_generation" > /dev/null 2>&1
