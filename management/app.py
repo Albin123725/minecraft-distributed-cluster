@@ -1,12 +1,7 @@
-from flask import Flask, render_template
-import requests
+from flask import Flask, render_template, jsonify
 import os
 
 app = Flask(__name__)
-
-# Auto-configured management dashboard
-MANAGEMENT_NODE = os.getenv('RENDER_SERVICE_NAME', 'mc-management')
-CLUSTER_VERSION = "2.0.0"
 
 @app.route('/')
 def dashboard():
@@ -21,15 +16,24 @@ def dashboard():
             'url': server_url,
             'port': 25565 + i,
             'region': get_region_name(i),
-            'status': 'Unknown'
+            'status': 'Auto-configured'
         })
     
     return render_template('dashboard.html', 
                          servers=servers,
-                         management_node=MANAGEMENT_NODE,
-                         version=CLUSTER_VERSION,
+                         management_node="mc-management",
+                         version="2.0.0",
                          total_ram="6GB",
                          total_players=320)
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy", "service": "mc-management"})
+
+# Render auto-detects health at root path
+@app.route('/')
+def root():
+    return dashboard()
 
 def get_region_name(server_num):
     regions = {
