@@ -1,17 +1,15 @@
 #!/bin/bash
-echo "📥 Downloading minimal plugins for $NODE_ID (memory optimized)..."
+echo "📥 Downloading minimal plugins for $NODE_ID..."
 mkdir -p /app/plugins
 
-# Minimal plugin set for memory efficiency
-MINIMAL_PLUGINS=(
-    "https://cdn.modrinth.com/data/U6oOTGTt/versions/gzEC9sT6/auto-reload-1.0.0.jar"
-)
+# Skip plugin downloads initially to fix memory issues
+echo "⚠️  Skipping plugin downloads during initial setup (memory optimization)"
+echo "🔧 Plugins can be added later via Google Drive sync"
 
-for plugin_url in "${MINIMAL_PLUGINS[@]}"; do
-    plugin_name=$(basename $plugin_url)
-    echo "📥 Downloading $plugin_name..."
-    wget --timeout=30 -q -O "/app/plugins/$plugin_name" "$plugin_url" && echo "✅ Downloaded $plugin_name" || echo "❌ Failed to download $plugin_name (skipping)"
-done
+# Remove any corrupted plugin files that might exist
+rm -f /app/plugins/*.jar
 
-echo "✅ Minimal plugin setup completed"
-ls -la /app/plugins/
+# Create empty plugin directory for now
+touch /app/plugins/.keep
+
+echo "✅ Plugin system ready for manual setup"
