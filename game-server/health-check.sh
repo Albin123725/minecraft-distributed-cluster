@@ -1,3 +1,3 @@
 #!/bin/bash
-# Simple process-based health check for game server
+# Simple process-based health check
 pgrep -f "paper.jar" > /dev/null
