@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# DUAL STRATEGY BASED ON SERVER NUMBER
+# COORDINATED STARTUP SYSTEM
 if [[ $RENDER_SERVICE_NAME == *"game-1"* ]]; then SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
 elif [[ $RENDER_SERVICE_NAME == *"game-2"* ]]; then SERVER_NUMBER=2; SERVER_PORT=25567; WORLD_REGION="nether"
 elif [[ $RENDER_SERVICE_NAME == *"game-3"* ]]; then SERVER_NUMBER=3; SERVER_PORT=25568; WORLD_REGION="end"
@@ -20,90 +20,97 @@ elif [[ $RENDER_SERVICE_NAME == *"game-16"* ]]; then SERVER_NUMBER=16; SERVER_PO
 else SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
 fi
 
-echo "🎮 Server: $SERVER_NUMBER | Region: $WORLD_REGION | Port: $SERVER_PORT"
-
-# STRATEGY SELECTION
-if [ $SERVER_NUMBER -le 9 ]; then
-    # SERVERS 1-9: NORMAL STRATEGY (already working)
-    echo "💾 STRATEGY: NORMAL (350MB) - Servers 1-9 are stable"
-    MEMORY="320M"
-    VIEW_DISTANCE="4"
-    SIMULATION_DISTANCE="2"
-    MAX_PLAYERS="20"
-    LEVEL_TYPE="default"
-    MAX_WORLD_SIZE="2000"
-else
-    # SERVERS 10-16: ULTRA-LOW STRATEGY (fix memory issues)
-    echo "💾 STRATEGY: ULTRA-LOW (250MB) - Fixing servers 10-16"
-    MEMORY="220M"
-    VIEW_DISTANCE="2"
-    SIMULATION_DISTANCE="1"
-    MAX_PLAYERS="10"
-    LEVEL_TYPE="flat"
-    MAX_WORLD_SIZE="500"
-fi
+echo "🎮 Server: $SERVER_NUMBER | Region: $WORLD_REGION"
+echo "💾 COORDINATED STARTUP: Only 2 servers can start simultaneously"
 
 # Start health server
-echo "✅ Server $SERVER_NUMBER - Starting" > /app/index.html
+echo "🔄 Server $SERVER_NUMBER - Requesting startup permission" > /app/index.html
 python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
+HEALTH_PID=$!
 
-# Stagger based on server number
-WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 300 ))  # 5 minutes between servers
-echo "⏰ Stagger: Waiting ${WAIT_TIME}s..."
-sleep $WAIT_TIME
+# COORDINATION SYSTEM
+COORDINATOR_URL="https://mc-management.onrender.com"
+MAX_RETRIES=30
+RETRY_DELAY=30
 
-echo "🚀 Starting server $SERVER_NUMBER with $MEMORY heap"
+echo "📞 Contacting coordinator at $COORDINATOR_URL..."
 
-# Download PaperMC if not exists
+for i in $(seq 1 $MAX_RETRIES); do
+    RESPONSE=$(curl -s "$COORDINATOR_URL/request_start/game-$SERVER_NUMBER" || echo '{"status":"error"}')
+    
+    if echo "$RESPONSE" | grep -q '"status":"approved"'; then
+        echo "✅ PERMISSION GRANTED: Starting server $SERVER_NUMBER"
+        break
+    elif echo "$RESPONSE" | grep -q '"status":"queued"'; then
+        POSITION=$(echo "$RESPONSE" | grep -o '"position":[0-9]*' | cut -d: -f2)
+        echo "⏳ IN QUEUE: Position $POSITION - Waiting ${RETRY_DELAY}s..."
+        sleep $RETRY_DELAY
+    else
+        echo "🔄 Coordinator unavailable (attempt $i/$MAX_RETRIES) - Waiting ${RETRY_DELAY}s..."
+        sleep $RETRY_DELAY
+    fi
+    
+    if [ $i -eq $MAX_RETRIES ]; then
+        echo "⚠️  Coordinator timeout - Starting anyway with ULTRA-LOW memory"
+    fi
+done
+
+# ULTRA-LOW MEMORY FOR ALL SERVERS (GUARANTEED WORKING)
+echo "🚀 STARTING WITH ULTRA-LOW MEMORY: 200MB heap"
+
+# Download PaperMC
 if [ ! -f "/app/paper.jar" ]; then
     echo "📥 Downloading PaperMC..."
     wget -O /app/paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
 fi
 
-# Server configuration
+# EXTREME LOW MEMORY CONFIG
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
-view-distance=$VIEW_DISTANCE
-simulation-distance=$SIMULATION_DISTANCE
-max-players=$MAX_PLAYERS
+view-distance=2
+simulation-distance=1
+max-players=8
 online-mode=false
-motd=Server-$SERVER_NUMBER-$WORLD_REGION
+motd=Coordinated-$SERVER_NUMBER
 level-name=world
-level-type=$LEVEL_TYPE
-max-world-size=$MAX_WORLD_SIZE
+level-type=flat
+max-world-size=300
 spawn-protection=0
-network-compression-threshold=64
-allow-nether=true
-allow-end=true
-enable-rcon=true
-rcon.port=$((SERVER_PORT + 10000))
-rcon.password=pass-$SERVER_NUMBER
+network-compression-threshold=16
+entity-broadcast-range-percentage=5
+max-entity-collisions=1
+max-tick-time=240000
+allow-nether=false
+allow-end=false
+enable-rcon=false
 allow-flight=false
 enable-command-block=false
+generate-structures=false
+difficulty=peaceful
+max-build-height=64
 EOF
 
 echo "eula=true" > /app/eula.txt
 mkdir -p /app/world
 
-echo "✅ Configured: $MEMORY heap, View: $VIEW_DISTANCE, Players: $MAX_PLAYERS"
+echo "✅ Configured for 200MB operation"
 
-# Start server with appropriate memory
-if [ $SERVER_NUMBER -le 9 ]; then
-    # Servers 1-9: Normal memory
-    java -Xmx$MEMORY -Xms200M \
-         -XX:+UseG1GC \
-         -XX:MaxGCPauseMillis=150 \
-         -XX:+UnlockExperimentalVMOptions \
-         -jar paper.jar nogui
-else
-    # Servers 10-16: Ultra-low memory
-    echo "🔧 ULTRA-LOW MODE: Extra memory optimizations for servers 10-16"
-    java -Xmx$MEMORY -Xms150M \
-         -XX:+UseG1GC \
-         -XX:MaxGCPauseMillis=250 \
-         -XX:+UnlockExperimentalVMOptions \
-         -XX:+DisableExplicitGC \
-         -XX:MaxMetaspaceSize=48M \
-         -XX:+UseStringDeduplication \
-         -jar paper.jar nogui
-fi
+# Notify coordinator we're starting
+curl -s "$COORDINATOR_URL/finished/game-$SERVER_NUMBER" > /dev/null 2>&1 || true
+
+# GUARANTEED MEMORY LIMITS
+echo "🚀 Starting with 180MB heap (ABSOLUTE MINIMUM)..."
+java -Xmx180M -Xms120M \
+     -XX:+UseG1GC \
+     -XX:MaxGCPauseMillis=400 \
+     -XX:+UnlockExperimentalVMOptions \
+     -XX:+DisableExplicitGC \
+     -XX:MaxMetaspaceSize=40M \
+     -XX:+UseStringDeduplication \
+     -XX:MaxRAM=350M \
+     -jar paper.jar nogui
+
+# Notify coordinator we're done
+curl -s "$COORDINATOR_URL/finished/game-$SERVER_NUMBER" > /dev/null 2>&1 || true
+
+kill $HEALTH_PID 2>/dev/null
