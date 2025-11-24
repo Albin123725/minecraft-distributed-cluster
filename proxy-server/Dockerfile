@@ -10,9 +10,9 @@ RUN wget -O bungee.jar https://ci.md-5.net/job/BungeeCord/lastSuccessfulBuild/ar
 # Copy configuration
 COPY config.yml .
 COPY start.sh .
-COPY health-check.sh .
-RUN chmod +x start.sh health-check.sh
+RUN chmod +x start.sh
 
-EXPOSE 25575 8080
+# Expose Minecraft port + default health port
+EXPOSE 25575 10000
 
 CMD ["./start.sh"]
