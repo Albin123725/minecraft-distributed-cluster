@@ -2,7 +2,7 @@
 
 echo "🎮 Starting PaperMC Server: $NODE_ID"
 echo "🌍 Region: $WORLD_REGION"
-echo "💾 RAM: 430MB (Part of 6.88GB Cluster)"
+echo "💾 RAM: 350MB (Part of 5.6GB Cluster)"
 echo "🔧 Configuration:"
 echo "   - Server Port: $SERVER_PORT"
 echo "   - Management URL: $MANAGEMENT_URL"
@@ -12,36 +12,40 @@ echo "   - Google Drive Folder: $GDRIVE_FOLDER_ID"
 
 # Wait based on server number to stagger startup
 SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
-WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 30 ))
+WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 60 ))  # Increased to 60 seconds
 echo "⏰ Staggered startup: waiting ${WAIT_TIME}s..."
 sleep $WAIT_TIME
 
-# Skip plugin downloads initially (fixes memory and corruption issues)
-echo "📥 Skipping plugin downloads for initial stability..."
+# Skip plugin downloads initially
+echo "📥 Skipping plugin downloads for memory optimization..."
 mkdir -p /app/plugins
-rm -f /app/plugins/*.jar  # Remove any corrupted plugins
+rm -f /app/plugins/*.jar
 
-# Optimize server with reduced memory
-echo "⚡ Server Optimizer for $NODE_ID"
+# Use ultra-low memory settings for initial startup
+echo "⚡ ULTRA-LOW MEMORY MODE for $NODE_ID"
 echo "🌍 Region: $WORLD_REGION"
-echo "👀 View Distance: 6"
-echo "🎯 Simulation Distance: 4"
+echo "👀 View Distance: 4"
+echo "🎯 Simulation Distance: 2"
 
-# Create server.properties with optimized settings
+# Create server.properties with ULTRA-optimized settings
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
-view-distance=6
-simulation-distance=4
-max-players=25
+view-distance=4
+simulation-distance=2
+max-players=20
 online-mode=false
 white-list=false
-motd=PaperMC Distributed Cluster - $WORLD_REGION
+motd=PaperMC Cluster - $WORLD_REGION
 level-name=world
 level-type=minecraft:normal
 generator-settings=
 hardcore=false
-enable-command-block=true
-max-world-size=10000
+enable-command-block=false
+max-world-size=5000
+max-build-height=256
+spawn-protection=0
+entity-broadcast-range-percentage=50
+sync-chunk-writes=false
 EOF
 
 # Set RCON
@@ -54,13 +58,14 @@ echo "rcon.port=$RCON_PORT" >> /app/server.properties
 echo "rcon.password=$RCON_PASSWORD" >> /app/server.properties
 echo "enable-rcon=true" >> /app/server.properties
 
-echo "✅ Server configured!"
+echo "✅ Server configured for ultra-low memory mode!"
 
-# Start server with reduced memory (NO PLUGINS = MORE MEMORY FOR MINECRAFT)
-echo "🚀 Starting PaperMC server (vanilla mode - no plugins)..."
-exec java -Xmx350M -Xms256M \
+# Start server with EXTREMELY reduced memory
+echo "🚀 Starting PaperMC server (ULTRA-LOW MEMORY MODE)..."
+exec java -Xmx280M -Xms200M \
      -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=100 \
+     -XX:MaxGCPauseMillis=150 \
      -XX:+UnlockExperimentalVMOptions \
-     -XX:+ParallelRefProcEnabled \
+     -XX:+DisableExplicitGC \
+     -XX:+AlwaysPreTouch \
      -jar paper.jar nogui
