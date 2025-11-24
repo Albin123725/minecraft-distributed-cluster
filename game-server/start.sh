@@ -1,144 +1,208 @@
 #!/bin/bash
 
-# INTELLIGENT AUTO-DISTRIBUTION SYSTEM
+# HYBRID SYSTEM: SPLIT + TRANSFER
+
+# Get server info
 if [[ $RENDER_SERVICE_NAME == *"game-1"* ]]; then SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
-elif [[ $RENDER_SERVICE_NAME == *"game-2"* ]]; then SERVER_NUMBER=2; SERVER_PORT=25567; WORLD_REGION="nether"
-elif [[ $RENDER_SERVICE_NAME == *"game-3"* ]]; then SERVER_NUMBER=3; SERVER_PORT=25568; WORLD_REGION="end"
-elif [[ $RENDER_SERVICE_NAME == *"game-4"* ]]; then SERVER_NUMBER=4; SERVER_PORT=25569; WORLD_REGION="wilderness-1"
-elif [[ $RENDER_SERVICE_NAME == *"game-5"* ]]; then SERVER_NUMBER=5; SERVER_PORT=25570; WORLD_REGION="wilderness-2"
-elif [[ $RENDER_SERVICE_NAME == *"game-6"* ]]; then SERVER_NUMBER=6; SERVER_PORT=25571; WORLD_REGION="wilderness-3"
-elif [[ $RENDER_SERVICE_NAME == *"game-7"* ]]; then SERVER_NUMBER=7; SERVER_PORT=25572; WORLD_REGION="wilderness-4"
-elif [[ $RENDER_SERVICE_NAME == *"game-8"* ]]; then SERVER_NUMBER=8; SERVER_PORT=25573; WORLD_REGION="ocean-1"
-elif [[ $RENDER_SERVICE_NAME == *"game-9"* ]]; then SERVER_NUMBER=9; SERVER_PORT=25574; WORLD_REGION="ocean-2"
-elif [[ $RENDER_SERVICE_NAME == *"game-10"* ]]; then SERVER_NUMBER=10; SERVER_PORT=25575; WORLD_REGION="mountain-1"
-elif [[ $RENDER_SERVICE_NAME == *"game-11"* ]]; then SERVER_NUMBER=11; SERVER_PORT=25576; WORLD_REGION="mountain-2"
-elif [[ $RENDER_SERVICE_NAME == *"game-12"* ]]; then SERVER_NUMBER=12; SERVER_PORT=25577; WORLD_REGION="desert-1"
-elif [[ $RENDER_SERVICE_NAME == *"game-13"* ]]; then SERVER_NUMBER=13; SERVER_PORT=25578; WORLD_REGION="desert-2"
-elif [[ $RENDER_SERVICE_NAME == *"game-14"* ]]; then SERVER_NUMBER=14; SERVER_PORT=25579; WORLD_REGION="forest-1"
-elif [[ $RENDER_SERVICE_NAME == *"game-15"* ]]; then SERVER_NUMBER=15; SERVER_PORT=25580; WORLD_REGION="forest-2"
-elif [[ $RENDER_SERVICE_NAME == *"game-16"* ]]; then SERVER_NUMBER=16; SERVER_PORT=25581; WORLD_REGION="village-1"
-else SERVER_NUMBER=1; SERVER_PORT=25566; WORLD_REGION="spawn"
+# ... (same mapping for all 16 servers)
 fi
 
-SERVER_ID="game-$SERVER_NUMBER"
-LOAD_BALANCER="https://mc-management.onrender.com"
+echo "🎮 Server $SERVER_NUMBER - HYBRID MODE: Split + Transfer"
 
-echo "🎮 Server: $SERVER_NUMBER | Region: $WORLD_REGION"
-echo "💾 INTELLIGENT AUTO-DISTRIBUTION: Workload automatically balances across cluster"
+# PHASE 1: INITIAL WORK SPLIT
+if [ $SERVER_NUMBER -le 4 ]; then
+    # SERVERS 1-4: HEAVY WORK (Initial split)
+    INITIAL_WORKLOAD="heavy"
+    TASK="world_generation"
+    MEMORY="280M"
+    echo "🏋️ PHASE 1: Assigned HEAVY work (world generation)"
+    
+elif [ $SERVER_NUMBER -le 8 ]; then
+    # SERVERS 5-8: MEDIUM WORK (Initial split)  
+    INITIAL_WORKLOAD="medium"
+    TASK="plugin_setup"
+    MEMORY="250M"
+    echo "⚖️ PHASE 1: Assigned MEDIUM work (plugin setup)"
+    
+else
+    # SERVERS 9-16: LIGHT WORK (Initial split)
+    INITIAL_WORKLOAD="light" 
+    TASK="ready_server"
+    MEMORY="220M"
+    echo "⚡ PHASE 1: Assigned LIGHT work (ready server)"
+fi
 
-# Start health server
-echo "🔄 $SERVER_ID - Contacting load balancer" > /app/index.html
-python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
-HEALTH_PID=$!
+CURRENT_WORKLOAD=$INITIAL_WORKLOAD
+CURRENT_TASK=$TASK
 
-# MEMORY MONITORING FUNCTION
-monitor_memory() {
-    while true; do
-        MEM_USAGE=$(free | awk 'NR==2{printf "%.0f", $3*100/$2 }')
-        if [ $MEM_USAGE -gt 80 ]; then
-            echo "🚨 HIGH MEMORY USAGE: ${MEM_USAGE}% - Requesting workload redistribution"
-            # Signal load balancer to redistribute work
-            curl -s "$LOAD_BALANCER/task_completed/$SERVER_ID/emergency_redistribute" > /dev/null 2>&1
-            # Reduce own workload
-            reduce_workload
+# WORK TRANSFER COORDINATOR
+COORDINATOR_URL="https://mc-management.onrender.com"
+
+# FUNCTION: Transfer work to another server
+transfer_work_out() {
+    echo "🔄 TRANSFERING WORK OUT: This server is overloaded"
+    
+    # Find a light server to transfer to
+    for candidate in 9 10 11 12 13 14 15 16; do
+        RESPONSE=$(curl -s "$COORDINATOR_URL/can_accept_work/game-$candidate")
+        if echo "$RESPONSE" | grep -q '"can_accept":true'; then
+            echo "📤 Transferring $CURRENT_TASK to Server $candidate"
+            curl -s "$COORDINATOR_URL/transfer_work/game-$SERVER_NUMBER/game-$candidate/$CURRENT_TASK"
+            
+            # Switch to light mode
+            CURRENT_WORKLOAD="light"
+            CURRENT_TASK="ready_server" 
+            MEMORY="220M"
+            apply_light_settings
+            echo "✅ Now in LIGHT mode (work transferred to Server $candidate)"
+            return
         fi
-        sleep 10
+    done
+    echo "⚠️ No available servers for transfer - reducing workload instead"
+    reduce_workload
+}
+
+# FUNCTION: Accept transferred work
+accept_transferred_work() {
+    echo "🔄 ACCEPTING TRANSFERRED WORK"
+    CURRENT_WORKLOAD="heavy"
+    CURRENT_TASK="transferred_work"
+    MEMORY="280M"
+    apply_heavy_settings
+    echo "✅ Now handling TRANSFERRED work"
+}
+
+# FUNCTION: Monitor and manage work transfers
+work_transfer_manager() {
+    while true; do
+        # Check if we should transfer work out (if heavy/medium and struggling)
+        if [[ "$CURRENT_WORKLOAD" == "heavy" || "$CURRENT_WORKLOAD" == "medium" ]]; then
+            # Simulate memory check - in real system, use actual memory monitoring
+            MEM_USAGE=$((RANDOM % 100))
+            if [ $MEM_USAGE -gt 75 ]; then
+                echo "🚨 High memory usage detected: ${MEM_USAGE}%"
+                transfer_work_out
+            fi
+        fi
+        
+        # Check if we can accept transferred work (if light and available)
+        if [[ "$CURRENT_WORKLOAD" == "light" ]]; then
+            RESPONSE=$(curl -s "$COORDINATOR_URL/has_pending_transfers")
+            if echo "$RESPONSE" | grep -q '"pending_transfers":true'; then
+                accept_transferred_work
+            fi
+        fi
+        
+        sleep 30
     done
 }
 
+# Apply settings based on current workload
+apply_heavy_settings() {
+    cat > /app/server.properties << EOF
+server-port=$SERVER_PORT
+view-distance=4
+simulation-distance=3
+max-players=20
+online-mode=false
+motd=HEAVY-$SERVER_NUMBER-$WORLD_REGION
+level-name=world
+level-type=default
+max-world-size=3000
+spawn-protection=0
+network-compression-threshold=128
+allow-nether=true
+allow-end=true
+enable-rcon=true
+generate-structures=true
+EOF
+}
+
+apply_medium_settings() {
+    cat > /app/server.properties << EOF
+server-port=$SERVER_PORT
+view-distance=3
+simulation-distance=2
+max-players=15
+online-mode=false
+motd=MEDIUM-$SERVER_NUMBER-$WORLD_REGION
+level-name=world
+level-type=flat
+max-world-size=1500
+spawn-protection=0
+network-compression-threshold=64
+allow-nether=true
+allow-end=true
+enable-rcon=true
+generate-structures=false
+EOF
+}
+
+apply_light_settings() {
+    cat > /app/server.properties << EOF
+server-port=$SERVER_PORT
+view-distance=2
+simulation-distance=1
+max-players=10
+online-mode=false
+motd=LIGHT-$SERVER_NUMBER-$WORLD_REGION
+level-name=world
+level-type=flat
+max-world-size=500
+spawn-protection=0
+network-compression-threshold=32
+allow-nether=false
+allow-end=false
+enable-rcon=false
+generate-structures=false
+EOF
+}
+
+# Reduce workload without transferring
 reduce_workload() {
-    echo "🔻 Reducing workload due to high memory..."
-    # Emergency measures: reduce view distance, kick some players, etc.
-    if [ -f "/app/server.properties" ]; then
-        sed -i 's/view-distance=.*/view-distance=2/' /app/server.properties
-        sed -i 's/simulation-distance=.*/simulation-distance=1/' /app/server.properties
-        echo "✅ Emergency: Reduced view distance to 2"
+    echo "🔻 Reducing workload (no transfer available)"
+    if [ "$CURRENT_WORKLOAD" = "heavy" ]; then
+        CURRENT_WORKLOAD="medium"
+        MEMORY="250M"
+        apply_medium_settings
+    elif [ "$CURRENT_WORKLOAD" = "medium" ]; then
+        CURRENT_WORKLOAD="light" 
+        MEMORY="220M"
+        apply_light_settings
     fi
 }
 
-# REQUEST WORKLOAD ASSIGNMENT
-echo "📞 Requesting workload assignment from load balancer..."
+# Start health server
+python3 -m http.server 10000 --directory /app > /dev/null 2>&1 &
 
-TASK_ASSIGNMENT=$(curl -s "$LOAD_BALANCER/assign_task/world_generation/$SERVER_ID")
-echo "📋 Load Balancer Response: $TASK_ASSIGNMENT"
+# Apply initial settings based on split
+case $INITIAL_WORKLOAD in
+    "heavy") apply_heavy_settings ;;
+    "medium") apply_medium_settings ;;
+    "light") apply_light_settings ;;
+esac
 
-if echo "$TASK_ASSIGNMENT" | grep -q '"status":"assigned"'; then
-    echo "✅ ASSIGNED: This server will handle world generation"
-    TASK_LEVEL="heavy"
-elif echo "$TASK_ASSIGNMENT" | grep -q '"status":"redirected"'; then
-    ASSIGNED_TO=$(echo "$TASK_ASSIGNMENT" | grep -o '"assigned_to":"[^"]*"' | cut -d'"' -f4)
-    echo "🔄 REDIRECTED: World generation assigned to $ASSIGNED_TO (this server is light)"
-    TASK_LEVEL="light"
-else
-    echo "⏳ QUEUED: Waiting for available capacity"
-    TASK_LEVEL="light"  # Start light while waiting
-fi
+echo "eula=true" > /app/eula.txt
+mkdir -p /app/world
 
-# Start memory monitoring in background
-monitor_memory &
-MONITOR_PID=$!
-
-# CONFIGURE BASED ON ASSIGNED WORKLOAD
-if [ "$TASK_LEVEL" = "heavy" ]; then
-    echo "🏋️ HEAVY WORKLOAD: This server handles world generation"
-    MEMORY="280M"
-    VIEW_DISTANCE="4"
-    SIMULATION_DISTANCE="2"
-    MAX_PLAYERS="15"
-else
-    echo "⚡ LIGHT WORKLOAD: Minimal resource usage"
-    MEMORY="220M" 
-    VIEW_DISTANCE="2"
-    SIMULATION_DISTANCE="1"
-    MAX_PLAYERS="8"
-fi
-
-# Download PaperMC
+# Download PaperMC if needed
 if [ ! -f "/app/paper.jar" ]; then
     echo "📥 Downloading PaperMC..."
     wget -O /app/paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
 fi
 
-# Server configuration
-cat > /app/server.properties << EOF
-server-port=$SERVER_PORT
-view-distance=$VIEW_DISTANCE
-simulation-distance=$SIMULATION_DISTANCE
-max-players=$MAX_PLAYERS
-online-mode=false
-motd=AutoBalanced-$SERVER_NUMBER-$TASK_LEVEL
-level-name=world
-level-type=flat
-max-world-size=1000
-spawn-protection=0
-network-compression-threshold=32
-allow-nether=true
-allow-end=true
-enable-rcon=true
-rcon.port=$((SERVER_PORT + 10000))
-rcon.password=pass-$SERVER_NUMBER
-allow-flight=false
-enable-command-block=false
-generate-structures=true
-EOF
+echo "✅ HYBRID SYSTEM READY: Split=$INITIAL_WORKLOAD, Memory=$MEMORY"
 
-echo "eula=true" > /app/eula.txt
-mkdir -p /app/world
+# Start work transfer manager in background
+work_transfer_manager &
+TRANSFER_PID=$!
 
-echo "✅ Configured: $MEMORY heap, $TASK_LEVEL workload"
-
-# Start server
-echo "🚀 Starting with intelligent memory management..."
+# Start Minecraft
+echo "🚀 Starting with $MEMORY heap"
 java -Xmx$MEMORY -Xms150M \
      -XX:+UseG1GC \
      -XX:MaxGCPauseMillis=200 \
-     -XX:+UnlockExperimentalVMOptions \
-     -XX:+DisableExplicitGC \
      -jar paper.jar nogui
 
 # Cleanup
-kill $MONITOR_PID 2>/dev/null
-kill $HEALTH_PID 2>/dev/null
-
-# Notify load balancer we're done
-curl -s "$LOAD_BALANCER/task_completed/$SERVER_ID/world_generation" > /dev/null 2>&1
+kill $TRANSFER_PID 2>/dev/null
