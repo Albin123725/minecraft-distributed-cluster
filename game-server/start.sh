@@ -2,15 +2,7 @@
 
 echo "🎮 Starting PaperMC Server: $NODE_ID"
 echo "🌍 Region: $WORLD_REGION"
-echo "💾 RAM: 512MB (Part of 8GB Cluster)"
-
-SERVER_PORT=${SERVER_PORT:-25565}
-MANAGEMENT_URL=${MANAGEMENT_URL:-"mc-management.onrender.com"}
-PROXY_URL=${PROXY_URL:-"mc-proxy-main.onrender.com"}
-NODE_ID=${NODE_ID:-"game-unknown"}
-WORLD_REGION=${WORLD_REGION:-"default"}
-GDRIVE_FOLDER_ID=${GDRIVE_FOLDER_ID:-""}
-
+echo "💾 RAM: 430MB (Part of 6.88GB Cluster)"
 echo "🔧 Configuration:"
 echo "   - Server Port: $SERVER_PORT"
 echo "   - Management URL: $MANAGEMENT_URL"
@@ -18,45 +10,70 @@ echo "   - Proxy URL: $PROXY_URL"
 echo "   - World Region: $WORLD_REGION"
 echo "   - Google Drive Folder: $GDRIVE_FOLDER_ID"
 
-# Download files from Google Drive
-echo "📥 Downloading files from Google Drive..."
-/app/gdrive-downloader.sh
+# Wait based on server number to stagger startup
+SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
+WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 30 ))
+echo "⏰ Staggered startup: waiting ${WAIT_TIME}s..."
+sleep $WAIT_TIME
 
-# Optimize server settings
-/app/server-optimizer.sh
+# Download plugins (minimal set for memory efficiency)
+echo "📥 Downloading default plugins for $NODE_ID..."
+mkdir -p /app/plugins
 
-# Calculate RCON port
-RCON_PORT=$((SERVER_PORT + 10000))
-echo "🔌 RCON Port: $RCON_PORT"
+# Use minimal plugin set
+MINIMAL_PLUGINS=(
+    "https://cdn.modrinth.com/data/U6oOTGTt/versions/gzEC9sT6/auto-reload-1.0.0.jar"
+)
 
-# Generate RCON password
-RCON_PASSWORD="${NODE_ID}-$(date +%s | sha256sum | base64 | head -c 16)"
-echo "🔑 RCON Password: $RCON_PASSWORD"
-echo $RCON_PASSWORD > /app/rcon_password.txt
+for plugin_url in "${MINIMAL_PLUGINS[@]}"; do
+    plugin_name=$(basename $plugin_url)
+    echo "📥 Downloading $plugin_name..."
+    wget --timeout=30 -q -O "/app/plugins/$plugin_name" "$plugin_url" && echo "✅ Downloaded $plugin_name" || echo "❌ Failed to download $plugin_name"
+done
 
-# Create server.properties
+# Optimize server with reduced memory
+echo "⚡ Server Optimizer for $NODE_ID"
+echo "🌍 Region: $WORLD_REGION"
+echo "👀 View Distance: 6"
+echo "🎯 Simulation Distance: 4"
+
+# Create server.properties with optimized settings
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
+view-distance=6
+simulation-distance=4
 max-players=25
 online-mode=false
-motd=PaperMC $WORLD_REGION - 1.21.10
-view-distance=8
-simulation-distance=6
-level-name=world-$WORLD_REGION
-enable-rcon=true
-rcon.port=$RCON_PORT
-rcon.password=$RCON_PASSWORD
+white-list=false
+motd=PaperMC Distributed Cluster - $WORLD_REGION
+level-name=world
+level-type=minecraft\:normal
+generator-settings=
+hardcore=false
+enable-command-block=true
+max-world-size=10000
 EOF
+
+# Set RCON
+RCON_PORT=$((SERVER_PORT + 10000))
+RCON_PASSWORD="${NODE_ID}-$(openssl rand -hex 10)"
+echo "🔌 RCON Port: $RCON_PORT"
+echo "🔑 RCON Password: $RCON_PASSWORD"
+
+echo "rcon.port=$RCON_PORT" >> /app/server.properties
+echo "rcon.password=$RCON_PASSWORD" >> /app/server.properties
+echo "enable-rcon=true" >> /app/server.properties
 
 echo "✅ Server configured!"
 
-# Start background services
-/app/sync-worlds.sh &
-/app/health-monitor.sh &
+# Start health monitor in background
+./health-monitor.sh &
 
-# Start PaperMC server
-exec java -Xmx400M -Xms256M \
+# Start server with reduced memory
+echo "🚀 Starting PaperMC server with optimized memory..."
+exec java -Xmx350M -Xms256M \
      -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=50 \
+     -XX:MaxGCPauseMillis=100 \
      -XX:+UnlockExperimentalVMOptions \
+     -XX:+ParallelRefProcEnabled \
      -jar paper.jar nogui
