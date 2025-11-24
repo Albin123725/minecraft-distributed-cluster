@@ -9,6 +9,7 @@ listeners:
   forced_hosts: {}
   ping_passthrough: false
   proxy_protocol: false
+  default_server: spawn  # ← CHANGED FROM 'lobby' TO 'spawn'
 
 player_limit: 400
 ip_forward: true
