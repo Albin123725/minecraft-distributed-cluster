@@ -1,20 +1,16 @@
-# 🎮 Minecraft Distributed Cluster
+# 🎮 Minecraft Distributed Cluster v2.0
 
-A high-performance, scalable distributed Minecraft cluster with 16 specialized game servers, cloud storage integration, and web-based management.
+A high-performance, scalable distributed Minecraft cluster with Google Drive integration.
 
-## 🚀 Features
+## 🚀 Quick Start
 
-- **16 Regional Game Servers** with specialized biomes
-- **Google Drive Integration** for persistent storage
-- **Web Management Dashboard** with RCON control
-- **400 Player Capacity** across the cluster
-- **Auto-scaling** on Render.com
-- **Plugin Management** with automatic updates
-- **World Backup System** with cloud sync
+```bash
+# 1. Setup Google Drive
+./gdrive-setup.sh
 
-## 📋 Quick Start
+# 2. Authenticate (browser will open)
+cd server-files
+python3 gdrive-auth.py
 
-1. **Setup Google Drive API**:
-   ```bash
-   ./gdrive-setup.sh
-   python3 server-files/gdrive-auth.py
+# 3. Deploy to Render
+./deploy.sh
