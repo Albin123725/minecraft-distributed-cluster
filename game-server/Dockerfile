@@ -17,7 +17,7 @@ RUN mkdir -p /app/plugins /app/worlds
 # Accept EULA
 RUN echo "eula=true" > /app/eula.txt
 
-# Expose both Minecraft port and HTTP health port range
-EXPOSE 25566-25581 8081-8096
+# Expose Minecraft ports + default health port
+EXPOSE 25566-25581 10000
 
 CMD ["./start.sh"]
