@@ -1,0 +1,14 @@
+# BungeeCord Proxy Plugins
+# Add plugin download URLs here
+
+# Required for distributed cluster:
+# https://example.com/SomeProxyPlugin.jar
+
+# Recommended plugins:
+# - BungeeTabListPlus - Customizable tab list
+# - BungeeGuard - Additional security
+# - AdvancedBan - Cross-server banning
+# - BungeeChat - Cross-server chat
+
+# Note: Proxy plugins are different from Bukkit/Spigot plugins
+# Make sure to download BungeeCord-compatible plugins only
