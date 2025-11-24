@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# AUTO-CONFIGURATION - No manual environment variables needed!
+# AUTO-CONFIGURATION - No manual health checks needed!
 SERVICE_NAME="${RENDER_SERVICE_NAME:-mc-game-1}"
 NODE_ID="${SERVICE_NAME//mc-/}"
 SERVER_NUMBER=$(echo $NODE_ID | sed 's/game-//')
 
-# Auto-assign ports and regions
+# Auto-assign everything
 case $SERVER_NUMBER in
     1) SERVER_PORT="25566"; WORLD_REGION="spawn" ;;
     2) SERVER_PORT="25567"; WORLD_REGION="nether" ;;
@@ -26,34 +26,32 @@ case $SERVER_NUMBER in
     *) SERVER_PORT="25566"; WORLD_REGION="spawn" ;;
 esac
 
-HTTP_PORT=$((8080 + $SERVER_NUMBER))
+# Use Render's DEFAULT health check port (10000) for ALL services
+HEALTH_PORT="10000"
 MANAGEMENT_URL="https://mc-management.onrender.com"
 PROXY_URL="https://mc-proxy-main.onrender.com"
 
 echo "🎮 Starting PaperMC Server: $NODE_ID"
 echo "🌍 Region: $WORLD_REGION"
 echo "💾 RAM: 375MB (Part of 6GB Cluster)"
-echo "🔧 Auto-configured:"
+echo "🔧 Fully Auto-configured:"
 echo "   - Server Port: $SERVER_PORT"
-echo "   - HTTP Health Port: $HTTP_PORT"
+echo "   - Health Port: $HEALTH_PORT (Auto-detected by Render)"
 echo "   - Management URL: $MANAGEMENT_URL"
 echo "   - Proxy URL: $PROXY_URL"
 
-# 🚨 CRITICAL: Start HTTP server IMMEDIATELY (before any wait)
-echo "Starting HTTP health server on port $HTTP_PORT"
-echo "✅ Minecraft Server $NODE_ID - Region: $WORLD_REGION - Status: STARTING" > /app/health.html
-python3 -m http.server $HTTP_PORT --directory /app > /dev/null 2>&1 &
+# 🚨 CRITICAL: Start HTTP server IMMEDIATELY on Render's default port
+echo "🌐 Starting automatic health server on port $HEALTH_PORT"
+echo "✅ Minecraft Server $NODE_ID - Region: $WORLD_REGION - Status: ONLINE" > /app/index.html
+python3 -m http.server $HEALTH_PORT --directory /app > /dev/null 2>&1 &
 HEALTH_PID=$!
 
-# Minimal wait for staggered startup (only 5 seconds between servers)
-WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 5 ))
-echo "⏰ Minimal staggered startup: waiting ${WAIT_TIME}s..."
+# Very short wait for staggered startup
+WAIT_TIME=$(( ($SERVER_NUMBER - 1) * 2 ))
+echo "⏰ Quick staggered startup: waiting ${WAIT_TIME}s..."
 sleep $WAIT_TIME
 
-# Update health status
-echo "✅ Minecraft Server $NODE_ID - Region: $WORLD_REGION - Status: ONLINE" > /app/health.html
-
-# Create server.properties with auto-configured settings
+# Create server.properties
 cat > /app/server.properties << EOF
 server-port=$SERVER_PORT
 view-distance=5
@@ -72,7 +70,7 @@ rcon.port=$((SERVER_PORT + 10000))
 rcon.password=${NODE_ID}-$(openssl rand -hex 8)
 EOF
 
-echo "✅ Server auto-configured for 375MB operation"
+echo "✅ Server auto-configured"
 
 # Function to cleanup processes
 cleanup() {
