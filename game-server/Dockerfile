@@ -1,29 +1,37 @@
-FROM openjdk:21-jdk-slim
+FROM openjdk:21-jdk
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y wget curl python3 python3-pip && apt-get clean
 
+# Copy requirements first for better caching
 COPY requirements-gdrive.txt .
 RUN pip3 install -r requirements-gdrive.txt
 
+# Download PaperMC 1.21.10
 RUN wget -O paper.jar https://api.papermc.io/v2/projects/paper/versions/1.21.10/builds/115/downloads/paper-1.21.10-115.jar
 
-COPY start.sh /app/start.sh
-COPY sync-worlds.sh /app/sync-worlds.sh
-COPY download-plugins.sh /app/download-plugins.sh
-COPY gdrive-downloader.sh /app/gdrive-downloader.sh
-COPY gdrive-download.py /app/gdrive-download.py
-COPY server-optimizer.sh /app/server-optimizer.sh
-COPY health-monitor.sh /app/health-monitor.sh
-COPY ../server-files/gdrive-manager.py /app/gdrive-manager.py
-COPY ../server-files/health-monitor.py /app/health-monitor.py
-COPY ../server-files/backup-manager.py /app/backup-manager.py
+# Copy all scripts
+COPY start.sh .
+COPY sync-worlds.sh .
+COPY download-plugins.sh .
+COPY gdrive-downloader.sh .
+COPY gdrive-download.py .
+COPY server-optimizer.sh .
+COPY health-monitor.sh .
+COPY backup-script.sh .
 
-RUN chmod +x /app/*.sh
+# Copy Python files
+COPY gdrive-manager.py .
+COPY health-monitor.py .
+COPY backup-manager.py .
 
+RUN chmod +x *.sh
+
+# Create necessary directories
 RUN mkdir -p /app/plugins /app/worlds /app/config
 
+# Accept EULA
 RUN echo "eula=true" > /app/eula.txt
 
 EXPOSE 25565-26581
